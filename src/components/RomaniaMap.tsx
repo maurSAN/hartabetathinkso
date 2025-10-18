@@ -35,10 +35,11 @@ const RomaniaMap = () => {
     map.current.on('load', () => {
       console.log('Map loaded');
       
-      // Add Romania counties boundaries
+      // Add Romania counties boundaries with v4 and promoteId for hover
       map.current?.addSource('romania-counties', {
         type: 'vector',
-        url: 'mapbox://mapbox.boundaries-adm2-v3'
+        url: 'mapbox://mapbox.boundaries-adm2-v4',
+        promoteId: 'mapbox_id'
       });
 
       console.log('Source added');
@@ -55,8 +56,8 @@ const RomaniaMap = () => {
           'fill-opacity': [
             'case',
             ['boolean', ['feature-state', 'hover'], false],
-            0.3,
-            0.1
+            0.5,
+            0.2
           ]
         }
       });
