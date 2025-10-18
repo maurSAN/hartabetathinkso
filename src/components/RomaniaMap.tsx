@@ -33,11 +33,15 @@ const RomaniaMap = () => {
     );
 
     map.current.on('load', () => {
+      console.log('Map loaded');
+      
       // Add Romania counties boundaries
       map.current?.addSource('romania-counties', {
         type: 'vector',
         url: 'mapbox://mapbox.boundaries-adm2-v3'
       });
+
+      console.log('Source added');
 
       // Add county fill layer
       map.current?.addLayer({
@@ -57,6 +61,8 @@ const RomaniaMap = () => {
         }
       });
 
+      console.log('Fill layer added');
+
       // Add county border layer
       map.current?.addLayer({
         id: 'counties-border',
@@ -75,7 +81,9 @@ const RomaniaMap = () => {
       let hoveredCountyId: string | number | null = null;
 
       map.current?.on('mousemove', 'counties-fill', (e) => {
+        console.log('Mouse move on counties-fill', e.features);
         if (e.features && e.features.length > 0) {
+          console.log('Feature found:', e.features[0].properties);
           if (hoveredCountyId !== null) {
             map.current?.setFeatureState(
               { source: 'romania-counties', sourceLayer: 'boundaries_admin_2', id: hoveredCountyId },
@@ -89,6 +97,7 @@ const RomaniaMap = () => {
           );
           
           const countyName = e.features[0].properties?.name || 'Necunoscut';
+          console.log('County name:', countyName);
           setSelectedCounty(countyName);
         }
       });
