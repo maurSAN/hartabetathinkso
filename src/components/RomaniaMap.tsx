@@ -11,6 +11,7 @@ const RomaniaMap = () => {
   const [mapboxToken, setMapboxToken] = useState('');
   const [isTokenSet, setIsTokenSet] = useState(false);
   const [selectedCounty, setSelectedCounty] = useState<string | null>(null);
+  const [clickedCounty, setClickedCounty] = useState<string | null>(null);
 
   useEffect(() => {
     if (!mapContainer.current || !isTokenSet) return;
@@ -74,26 +75,26 @@ const RomaniaMap = () => {
           }
         });
 
-        // Add internal county borders - subtle
+        // Add internal county borders - more visible
         map.current?.addLayer({
           id: 'counties-border-internal',
           type: 'line',
           source: 'romania-counties',
           paint: {
-            'line-color': 'hsl(210, 30%, 50%)',
-            'line-width': 1.5,
-            'line-opacity': 0.7
+            'line-color': 'hsl(210, 40%, 45%)',
+            'line-width': 2.5,
+            'line-opacity': 0.8
           }
         });
 
-        // Add external Romania border - darker and thicker
+        // Add external Romania border - much thicker and darker
         map.current?.addLayer({
           id: 'romania-border-outer',
           type: 'line',
           source: 'romania-counties',
           paint: {
-            'line-color': 'hsl(210, 60%, 25%)',
-            'line-width': 4,
+            'line-color': 'hsl(210, 70%, 20%)',
+            'line-width': 8,
             'line-opacity': 1
           }
         });
@@ -157,6 +158,15 @@ const RomaniaMap = () => {
             map.current.getCanvas().style.cursor = 'default';
           }
         });
+
+        // Click event for county selection
+        map.current?.on('click', 'counties-fill', (e) => {
+          if (e.features && e.features.length > 0) {
+            const feature = e.features[0];
+            const countyName = feature.properties?.shapeName || 'Necunoscut';
+            setClickedCounty(countyName);
+          }
+        });
         
         console.log('Map setup complete');
       } catch (error) {
@@ -218,7 +228,7 @@ const RomaniaMap = () => {
     <div className="relative w-full h-screen bg-background">
       <div ref={mapContainer} className="absolute inset-0" />
       
-      {selectedCounty && (
+      {selectedCounty && !clickedCounty && (
         <Card className="absolute top-4 left-4 p-4 bg-card/95 backdrop-blur-sm border-primary/20 shadow-lg">
           <p className="text-sm font-medium text-card-foreground">
             Județ: <span className="text-primary font-bold">{selectedCounty}</span>
@@ -226,12 +236,40 @@ const RomaniaMap = () => {
         </Card>
       )}
 
+      {clickedCounty && (
+        <Card className="absolute top-4 left-4 right-4 md:left-4 md:right-auto md:w-96 p-6 bg-card/95 backdrop-blur-sm border-primary/20 shadow-xl">
+          <div className="flex items-start justify-between mb-4">
+            <h2 className="text-xl font-bold text-card-foreground">
+              Județul {clickedCounty}
+            </h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setClickedCounty(null)}
+              className="h-6 w-6 p-0"
+            >
+              ✕
+            </Button>
+          </div>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Informații detaliate despre județul {clickedCounty} vor fi adăugate aici.
+            </p>
+            <div className="pt-2 border-t border-border">
+              <p className="text-xs text-muted-foreground italic">
+                Faceți click pe hartă pentru a explora alte județe.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80">
         <Card className="p-4 bg-card/95 backdrop-blur-sm border-primary/20 shadow-lg">
           <h3 className="font-bold text-card-foreground mb-2">Harta României</h3>
           <p className="text-xs text-muted-foreground">
-            Trece cu mouse-ul peste județe pentru a vedea numele. 
-            Harta este restricționată doar la teritoriul României.
+            Treceți cu mouse-ul peste județe pentru a vedea numele. 
+            Faceți click pe un județ pentru informații detaliate.
           </p>
         </Card>
       </div>
