@@ -10,27 +10,27 @@ const RomaniaMap = () => {
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState('');
   const [isTokenSet, setIsTokenSet] = useState(false);
+  const [hoveredCounty, setHoveredCounty] = useState<string | null>(null);
   const [selectedCounty, setSelectedCounty] = useState<string | null>(null);
-  const [clickedCounty, setClickedCounty] = useState<string | null>(null);
 
   useEffect(() => {
     if (!mapContainer.current || !isTokenSet) return;
 
     mapboxgl.accessToken = mapboxToken;
     
-    // Romania bounds - strict restriction
+    // Romania bounds
     const romaniaBounds: mapboxgl.LngLatBoundsLike = [
-      [20.2619, 43.6186], // Southwest coordinates
-      [29.7155, 48.2659]  // Northeast coordinates
+      [20.2619, 43.6186],
+      [29.7155, 48.2659]
     ];
     
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
+      style: 'mapbox://styles/mapbox/light-v11',
       center: [25.0, 46.0],
-      zoom: 6.8,
-      minZoom: 6.5,
-      maxZoom: 9,
+      zoom: 6.5,
+      minZoom: 6,
+      maxZoom: 10,
       maxBounds: romaniaBounds,
       pitch: 0,
       dragRotate: false,
@@ -45,18 +45,10 @@ const RomaniaMap = () => {
     );
 
     map.current.on('load', async () => {
-      console.log('Map loaded, fetching counties data...');
-      
       try {
-        // Using geoBoundaries data - reliable source
-        const response = await fetch('https://www.geoboundaries.org/api/current/gbOpen/ROU/ADM1/');
-        const apiData = await response.json();
-        
-        // Fetch the actual GeoJSON
-        const geoResponse = await fetch(apiData.gjDownloadURL);
-        const countiesData = await geoResponse.json();
-        
-        console.log('GeoJSON loaded successfully:', countiesData);
+        // Load local GeoJSON
+        const response = await fetch('/romania-counties.geojson');
+        const countiesData = await response.json();
 
         // Add source
         map.current?.addSource('romania-counties', {
@@ -64,77 +56,77 @@ const RomaniaMap = () => {
           data: countiesData,
         });
 
-        // Add fill layer - light fill
+        // Fill layer - light blue
         map.current?.addLayer({
           id: 'counties-fill',
           type: 'fill',
           source: 'romania-counties',
           paint: {
-            'fill-color': 'hsl(210, 40%, 85%)',
-            'fill-opacity': 0.6,
+            'fill-color': '#E3F2FD',
+            'fill-opacity': 0.7,
           }
         });
 
-        // Add internal county borders - more visible
+        // Internal county borders - visible
         map.current?.addLayer({
           id: 'counties-border-internal',
           type: 'line',
           source: 'romania-counties',
           paint: {
-            'line-color': 'hsl(210, 40%, 45%)',
+            'line-color': '#1976D2',
             'line-width': 2.5,
             'line-opacity': 0.8
           }
         });
 
-        // Add external Romania border - much thicker and darker
+        // External Romania border - thick and dark
         map.current?.addLayer({
           id: 'romania-border-outer',
           type: 'line',
           source: 'romania-counties',
           paint: {
-            'line-color': 'hsl(210, 70%, 20%)',
+            'line-color': '#0D47A1',
             'line-width': 8,
             'line-opacity': 1
           }
         });
 
-        // Add hover highlight layer
+        // Hover highlight layer
         map.current?.addLayer({
-          id: 'counties-highlight',
+          id: 'counties-hover',
           type: 'fill',
           source: 'romania-counties',
           paint: {
-            'fill-color': 'hsl(210, 80%, 60%)',
+            'fill-color': '#2196F3',
             'fill-opacity': 0
           }
         });
 
-        let hoveredStateId: string | number | null = null;
+        // Selected county layer
+        map.current?.addLayer({
+          id: 'counties-selected',
+          type: 'fill',
+          source: 'romania-counties',
+          paint: {
+            'fill-color': '#1976D2',
+            'fill-opacity': 0
+          }
+        });
 
-        // Mouse move event
+        // Hover events
         map.current?.on('mousemove', 'counties-fill', (e) => {
           if (e.features && e.features.length > 0) {
             const feature = e.features[0];
+            const countyName = feature.properties?.shapeName || 'Necunoscut';
             
-            if (hoveredStateId !== null && hoveredStateId !== feature.id) {
-              map.current?.setFeatureState(
-                { source: 'romania-counties', id: hoveredStateId },
-                { hover: false }
-              );
-            }
+            setHoveredCounty(countyName);
             
-            hoveredStateId = feature.id as string | number;
-            
-            map.current?.setPaintProperty('counties-highlight', 'fill-opacity', [
+            map.current?.setPaintProperty('counties-hover', 'fill-opacity', [
               'case',
-              ['==', ['get', 'shapeName'], feature.properties?.shapeName],
-              0.4,
+              ['==', ['get', 'shapeName'], countyName],
+              0.3,
               0
             ]);
-            
-            const countyName = feature.properties?.shapeName || 'Necunoscut';
-            setSelectedCounty(countyName);
             
             if (map.current) {
               map.current.getCanvas().style.cursor = 'pointer';
@@ -142,33 +134,32 @@ const RomaniaMap = () => {
           }
         });
 
-        // Mouse leave event
         map.current?.on('mouseleave', 'counties-fill', () => {
-          if (hoveredStateId !== null) {
-            map.current?.setFeatureState(
-              { source: 'romania-counties', id: hoveredStateId },
-              { hover: false }
-            );
-          }
-          hoveredStateId = null;
-          map.current?.setPaintProperty('counties-highlight', 'fill-opacity', 0);
-          setSelectedCounty(null);
+          setHoveredCounty(null);
+          map.current?.setPaintProperty('counties-hover', 'fill-opacity', 0);
           
           if (map.current) {
             map.current.getCanvas().style.cursor = 'default';
           }
         });
 
-        // Click event for county selection
+        // Click events
         map.current?.on('click', 'counties-fill', (e) => {
           if (e.features && e.features.length > 0) {
             const feature = e.features[0];
             const countyName = feature.properties?.shapeName || 'Necunoscut';
-            setClickedCounty(countyName);
+            
+            setSelectedCounty(countyName);
+            
+            map.current?.setPaintProperty('counties-selected', 'fill-opacity', [
+              'case',
+              ['==', ['get', 'shapeName'], countyName],
+              0.5,
+              0
+            ]);
           }
         });
-        
-        console.log('Map setup complete');
+
       } catch (error) {
         console.error('Error loading GeoJSON:', error);
       }
@@ -193,7 +184,7 @@ const RomaniaMap = () => {
           <div className="space-y-2">
             <h2 className="text-2xl font-bold text-foreground">Configurare Hartă</h2>
             <p className="text-sm text-muted-foreground">
-              Pentru a vizualiza harta României cu județele, introdu token-ul tău Mapbox.
+              Pentru a vizualiza harta României, introdu token-ul tău Mapbox.
             </p>
             <p className="text-xs text-muted-foreground">
               Obține un token gratuit de la{' '}
@@ -228,48 +219,51 @@ const RomaniaMap = () => {
     <div className="relative w-full h-screen bg-background">
       <div ref={mapContainer} className="absolute inset-0" />
       
-      {selectedCounty && !clickedCounty && (
-        <Card className="absolute top-4 left-4 p-4 bg-card/95 backdrop-blur-sm border-primary/20 shadow-lg">
-          <p className="text-sm font-medium text-card-foreground">
-            Județ: <span className="text-primary font-bold">{selectedCounty}</span>
+      {/* Hover tooltip */}
+      {hoveredCounty && !selectedCounty && (
+        <Card className="absolute top-4 left-4 p-3 bg-card/95 backdrop-blur-sm shadow-lg">
+          <p className="text-sm font-medium">
+            Județ: <span className="font-bold text-primary">{hoveredCounty}</span>
           </p>
         </Card>
       )}
 
-      {clickedCounty && (
-        <Card className="absolute top-4 left-4 right-4 md:left-4 md:right-auto md:w-96 p-6 bg-card/95 backdrop-blur-sm border-primary/20 shadow-xl">
+      {/* Selected county panel */}
+      {selectedCounty && (
+        <Card className="absolute top-4 left-4 right-4 md:right-auto md:w-96 p-6 bg-card/95 backdrop-blur-sm shadow-xl">
           <div className="flex items-start justify-between mb-4">
-            <h2 className="text-xl font-bold text-card-foreground">
-              Județul {clickedCounty}
-            </h2>
+            <h2 className="text-xl font-bold">Județul {selectedCounty}</h2>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setClickedCounty(null)}
-              className="h-6 w-6 p-0"
+              onClick={() => {
+                setSelectedCounty(null);
+                map.current?.setPaintProperty('counties-selected', 'fill-opacity', 0);
+              }}
+              className="h-8 w-8 p-0 hover:bg-muted"
             >
               ✕
             </Button>
           </div>
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Informații detaliate despre județul {clickedCounty} vor fi adăugate aici.
+              Informații detaliate despre județul {selectedCounty} vor fi adăugate aici.
             </p>
-            <div className="pt-2 border-t border-border">
+            <div className="pt-3 border-t">
               <p className="text-xs text-muted-foreground italic">
-                Faceți click pe hartă pentru a explora alte județe.
+                Click pe hartă pentru alte județe
               </p>
             </div>
           </div>
         </Card>
       )}
 
-      <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80">
-        <Card className="p-4 bg-card/95 backdrop-blur-sm border-primary/20 shadow-lg">
-          <h3 className="font-bold text-card-foreground mb-2">Harta României</h3>
+      {/* Info panel */}
+      <div className="absolute bottom-4 right-4 w-80 hidden md:block">
+        <Card className="p-4 bg-card/95 backdrop-blur-sm shadow-lg">
+          <h3 className="font-bold mb-2">Harta României</h3>
           <p className="text-xs text-muted-foreground">
-            Treceți cu mouse-ul peste județe pentru a vedea numele. 
-            Faceți click pe un județ pentru informații detaliate.
+            Treci cu mouse-ul pentru hover. Click pe județ pentru detalii.
           </p>
         </Card>
       </div>
