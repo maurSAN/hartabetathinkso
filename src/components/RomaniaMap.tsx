@@ -67,15 +67,15 @@ const RomaniaMap = () => {
           }
         });
 
-        // Internal county borders - visible
+        // Internal county borders - subtle
         map.current?.addLayer({
           id: 'counties-border-internal',
           type: 'line',
           source: 'romania-counties',
           paint: {
             'line-color': '#1976D2',
-            'line-width': 2.5,
-            'line-opacity': 0.8
+            'line-width': 1,
+            'line-opacity': 0.6
           }
         });
 
@@ -110,6 +110,26 @@ const RomaniaMap = () => {
           paint: {
             'fill-color': '#1976D2',
             'fill-opacity': 0
+          }
+        });
+
+        // County labels with abbreviations
+        map.current?.addLayer({
+          id: 'county-labels',
+          type: 'symbol',
+          source: 'romania-counties',
+          layout: {
+            'text-field': ['get', 'shapeISO'],
+            'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+            'text-size': 12,
+            'text-transform': 'uppercase',
+            'text-letter-spacing': 0.05
+          },
+          paint: {
+            'text-color': '#0D47A1',
+            'text-halo-color': '#FFFFFF',
+            'text-halo-width': 2,
+            'text-halo-blur': 1
           }
         });
 
