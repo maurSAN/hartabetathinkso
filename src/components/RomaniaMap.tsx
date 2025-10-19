@@ -17,7 +17,7 @@ const RomaniaMap = () => {
 
     mapboxgl.accessToken = mapboxToken;
     
-    // Romania bounds to restrict the map
+    // Romania bounds - strict restriction
     const romaniaBounds: mapboxgl.LngLatBoundsLike = [
       [20.2619, 43.6186], // Southwest coordinates
       [29.7155, 48.2659]  // Northeast coordinates
@@ -25,110 +25,114 @@ const RomaniaMap = () => {
     
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/light-v11',
-      center: [25.0, 45.9],
-      zoom: 6.5,
-      minZoom: 6,
-      maxZoom: 10,
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [25.0, 46.0],
+      zoom: 6.8,
+      minZoom: 6.5,
+      maxZoom: 9,
       maxBounds: romaniaBounds,
       pitch: 0,
+      dragRotate: false,
     });
 
     map.current.addControl(
       new mapboxgl.NavigationControl({
-        visualizePitch: true,
+        showCompass: false,
+        visualizePitch: false,
       }),
       'top-right'
     );
 
     map.current.on('load', async () => {
-      console.log('Map loaded');
+      console.log('Map loaded, fetching counties data...');
       
-      // Load GeoJSON for Romania counties from a public CDN
       try {
-        const response = await fetch('https://raw.githubusercontent.com/andrei-gheorghiu/geodata-ro/master/judete-simple.geojson');
-        const countiesData = await response.json();
+        // Using geoBoundaries data - reliable source
+        const response = await fetch('https://www.geoboundaries.org/api/current/gbOpen/ROU/ADM1/');
+        const apiData = await response.json();
         
-        console.log('GeoJSON loaded:', countiesData);
+        // Fetch the actual GeoJSON
+        const geoResponse = await fetch(apiData.gjDownloadURL);
+        const countiesData = await geoResponse.json();
+        
+        console.log('GeoJSON loaded successfully:', countiesData);
 
-        // Add counties source
+        // Add source
         map.current?.addSource('romania-counties', {
           type: 'geojson',
           data: countiesData,
         });
 
-        // Add county fill layer with Romanian colors
+        // Add fill layer - light fill
         map.current?.addLayer({
           id: 'counties-fill',
           type: 'fill',
           source: 'romania-counties',
           paint: {
-            'fill-color': [
-              'interpolate',
-              ['linear'],
-              ['get', 'id'],
-              1, 'hsl(210, 70%, 60%)',   // Albastru
-              20, 'hsl(350, 70%, 60%)',  // Roșu
-              40, 'hsl(48, 80%, 60%)'    // Galben
-            ],
-            'fill-opacity': 0.3,
+            'fill-color': 'hsl(210, 40%, 85%)',
+            'fill-opacity': 0.6,
           }
         });
 
-        // Add county border layer
+        // Add internal county borders - subtle
         map.current?.addLayer({
-          id: 'counties-border',
+          id: 'counties-border-internal',
           type: 'line',
           source: 'romania-counties',
           paint: {
-            'line-color': 'hsl(210, 60%, 40%)',
-            'line-width': 2,
-            'line-opacity': 0.8
+            'line-color': 'hsl(210, 30%, 50%)',
+            'line-width': 1.5,
+            'line-opacity': 0.7
           }
         });
 
-        // Add hover effect with highlighted border
+        // Add external Romania border - darker and thicker
+        map.current?.addLayer({
+          id: 'romania-border-outer',
+          type: 'line',
+          source: 'romania-counties',
+          paint: {
+            'line-color': 'hsl(210, 60%, 25%)',
+            'line-width': 4,
+            'line-opacity': 1
+          }
+        });
+
+        // Add hover highlight layer
         map.current?.addLayer({
           id: 'counties-highlight',
-          type: 'line',
+          type: 'fill',
           source: 'romania-counties',
           paint: {
-            'line-color': 'hsl(210, 90%, 50%)',
-            'line-width': 3,
-            'line-opacity': 0
+            'fill-color': 'hsl(210, 80%, 60%)',
+            'fill-opacity': 0
           }
         });
 
-        let hoveredCountyId: string | number | null = null;
+        let hoveredStateId: string | number | null = null;
 
+        // Mouse move event
         map.current?.on('mousemove', 'counties-fill', (e) => {
           if (e.features && e.features.length > 0) {
             const feature = e.features[0];
-            console.log('Hover on:', feature.properties);
             
-            // Reset previous hover
-            if (hoveredCountyId !== null) {
-              map.current?.setFilter('counties-highlight', ['!=', ['id'], hoveredCountyId]);
+            if (hoveredStateId !== null && hoveredStateId !== feature.id) {
+              map.current?.setFeatureState(
+                { source: 'romania-counties', id: hoveredStateId },
+                { hover: false }
+              );
             }
             
-            hoveredCountyId = feature.id || null;
+            hoveredStateId = feature.id as string | number;
             
-            // Highlight current county
-            map.current?.setPaintProperty('counties-fill', 'fill-opacity', [
+            map.current?.setPaintProperty('counties-highlight', 'fill-opacity', [
               'case',
-              ['==', ['id'], hoveredCountyId],
-              0.7,
-              0.3
-            ]);
-            
-            map.current?.setPaintProperty('counties-highlight', 'line-opacity', [
-              'case',
-              ['==', ['id'], hoveredCountyId],
-              1,
+              ['==', ['get', 'shapeName'], feature.properties?.shapeName],
+              0.4,
               0
             ]);
             
-            const countyName = feature.properties?.name || feature.properties?.nume || feature.properties?.NAME || 'Necunoscut';
+            const countyName = feature.properties?.shapeName || 'Necunoscut';
             setSelectedCounty(countyName);
             
             if (map.current) {
@@ -137,12 +141,16 @@ const RomaniaMap = () => {
           }
         });
 
+        // Mouse leave event
         map.current?.on('mouseleave', 'counties-fill', () => {
-          if (hoveredCountyId !== null) {
-            map.current?.setPaintProperty('counties-fill', 'fill-opacity', 0.3);
-            map.current?.setPaintProperty('counties-highlight', 'line-opacity', 0);
+          if (hoveredStateId !== null) {
+            map.current?.setFeatureState(
+              { source: 'romania-counties', id: hoveredStateId },
+              { hover: false }
+            );
           }
-          hoveredCountyId = null;
+          hoveredStateId = null;
+          map.current?.setPaintProperty('counties-highlight', 'fill-opacity', 0);
           setSelectedCounty(null);
           
           if (map.current) {
