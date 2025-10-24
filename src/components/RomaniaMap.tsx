@@ -30,8 +30,8 @@ const RomaniaMap = () => {
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
       center: [25.0, 46.0],
-      zoom: 6.5,
-      minZoom: 6,
+      zoom: 5.5,
+      minZoom: 4,
       maxZoom: 10,
       maxBounds: romaniaBounds,
       pitch: 0,
@@ -116,12 +116,20 @@ const RomaniaMap = () => {
         });
 
         // County labels with abbreviations
+        // MODIFICĂ AICI pentru a schimba ce se afișează pe hartă:
+        // Opțiunea 1: Afișează numele complet al județului - ['get', 'shapeName']
+        // Opțiunea 2 (CURENT): Afișează doar ultimele 2-3 caractere din ISO (fără RO-)
         map.current?.addLayer({
           id: 'county-labels',
           type: 'symbol',
           source: 'romania-counties',
           layout: {
-            'text-field': ['get', 'shapeISO'],
+            // Scoate 'RO-' din început (ex: RO-AB → AB)
+            'text-field': [
+              'slice',
+              ['get', 'shapeISO'],
+              3  // Începe de la caracterul 3 (după "RO-")
+            ],
             'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
             'text-size': 12,
             'text-transform': 'uppercase',
