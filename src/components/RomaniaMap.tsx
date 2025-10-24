@@ -171,6 +171,7 @@ const RomaniaMap = () => {
             const feature = e.features[0];
             const countyName = feature.properties?.shapeName || 'Necunoscut';
             
+            console.log('County clicked:', countyName); // Debug log
             setSelectedCounty(countyName);
             
             map.current?.setPaintProperty('counties-selected', 'fill-opacity', [
@@ -252,7 +253,7 @@ const RomaniaMap = () => {
 
       {/* Selected county panel - POPOUT */}
       {selectedCounty && (
-        <Card className="absolute top-4 left-4 right-4 md:right-auto md:w-[450px] md:max-h-[85vh] bg-card/98 backdrop-blur-sm shadow-2xl border-2">
+        <Card className="absolute top-4 left-4 right-4 md:right-auto md:w-[450px] md:max-h-[85vh] bg-card shadow-2xl border-2">
           <div className="flex items-start justify-between p-6 pb-4 border-b">
             <div>
               <h2 className="text-2xl font-bold text-primary">Județul {selectedCounty}</h2>
