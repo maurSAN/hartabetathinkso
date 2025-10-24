@@ -1,24 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { countyDetails, type CountyData } from '@/data/county-data';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+// ÎNLOCUIEȘTE cu token-ul tău Mapbox de la https://account.mapbox.com/access-tokens/
+const MAPBOX_TOKEN = 'pk.YOUR_MAPBOX_TOKEN_HERE';
+
 const RomaniaMap = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const [mapboxToken, setMapboxToken] = useState('');
-  const [isTokenSet, setIsTokenSet] = useState(false);
   const [hoveredCounty, setHoveredCounty] = useState<string | null>(null);
   const [selectedCounty, setSelectedCounty] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!mapContainer.current || !isTokenSet) return;
+    if (!mapContainer.current) return;
 
-    mapboxgl.accessToken = mapboxToken;
+    mapboxgl.accessToken = MAPBOX_TOKEN;
     
     // Romania bounds
     const romaniaBounds: mapboxgl.LngLatBoundsLike = [
@@ -199,52 +199,7 @@ const RomaniaMap = () => {
     return () => {
       map.current?.remove();
     };
-  }, [isTokenSet, mapboxToken]);
-
-  const handleTokenSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (mapboxToken.trim()) {
-      setIsTokenSet(true);
-    }
-  };
-
-  if (!isTokenSet) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md p-6 space-y-4">
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-foreground">Configurare Hartă</h2>
-            <p className="text-sm text-muted-foreground">
-              Pentru a vizualiza harta României, introdu token-ul tău Mapbox.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Obține un token gratuit de la{' '}
-              <a 
-                href="https://account.mapbox.com/access-tokens/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                mapbox.com
-              </a>
-            </p>
-          </div>
-          <form onSubmit={handleTokenSubmit} className="space-y-4">
-            <Input
-              type="text"
-              placeholder="pk.eyJ1IjoieW91ci1..."
-              value={mapboxToken}
-              onChange={(e) => setMapboxToken(e.target.value)}
-              className="w-full"
-            />
-            <Button type="submit" className="w-full">
-              Încarcă Harta
-            </Button>
-          </form>
-        </Card>
-      </div>
-    );
-  }
+  }, []);
 
   return (
     <div className="relative w-full h-screen bg-background">
