@@ -4,6 +4,8 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { countyDetails, type CountyData } from '@/data/county-data';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const RomaniaMap = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -248,11 +250,18 @@ const RomaniaMap = () => {
         </Card>
       )}
 
-      {/* Selected county panel */}
+      {/* Selected county panel - POPOUT */}
       {selectedCounty && (
-        <Card className="absolute top-4 left-4 right-4 md:right-auto md:w-96 p-6 bg-card/95 backdrop-blur-sm shadow-xl">
-          <div className="flex items-start justify-between mb-4">
-            <h2 className="text-xl font-bold">Județul {selectedCounty}</h2>
+        <Card className="absolute top-4 left-4 right-4 md:right-auto md:w-[450px] md:max-h-[85vh] bg-card/98 backdrop-blur-sm shadow-2xl border-2">
+          <div className="flex items-start justify-between p-6 pb-4 border-b">
+            <div>
+              <h2 className="text-2xl font-bold text-primary">Județul {selectedCounty}</h2>
+              {countyDetails[selectedCounty] && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {countyDetails[selectedCounty].description}
+                </p>
+              )}
+            </div>
             <Button
               variant="ghost"
               size="sm"
@@ -260,21 +269,49 @@ const RomaniaMap = () => {
                 setSelectedCounty(null);
                 map.current?.setPaintProperty('counties-selected', 'fill-opacity', 0);
               }}
-              className="h-8 w-8 p-0 hover:bg-muted"
+              className="h-8 w-8 p-0 hover:bg-muted shrink-0"
             >
               ✕
             </Button>
           </div>
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Informații detaliate despre județul {selectedCounty} vor fi adăugate aici.
-            </p>
-            <div className="pt-3 border-t">
-              <p className="text-xs text-muted-foreground italic">
-                Click pe hartă pentru alte județe
-              </p>
+          
+          <ScrollArea className="h-[calc(85vh-120px)] md:h-auto">
+            <div className="p-6 space-y-4">
+              {countyDetails[selectedCounty]?.properties && countyDetails[selectedCounty].properties.length > 0 ? (
+                <>
+                  <h3 className="font-semibold text-lg">Terenuri și Proprietăți</h3>
+                  <div className="space-y-4">
+                    {countyDetails[selectedCounty].properties.map((property, index) => (
+                      <Card key={index} className="p-4 bg-muted/50 border">
+                        <h4 className="font-bold text-base mb-2">{property.name}</h4>
+                        <div className="space-y-1 text-sm">
+                          <p><span className="font-medium">Locație:</span> {property.location}</p>
+                          <p><span className="font-medium">Suprafață:</span> {property.area}</p>
+                          <p><span className="font-medium">Preț:</span> {property.price}</p>
+                          <p className="text-muted-foreground mt-2">{property.description}</p>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">
+                    Nu există încă proprietăți adăugate pentru acest județ.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Adaugă detalii în <code className="bg-muted px-1 py-0.5 rounded">src/data/county-data.ts</code>
+                  </p>
+                </div>
+              )}
+              
+              <div className="pt-4 border-t">
+                <p className="text-xs text-muted-foreground italic">
+                  Click pe hartă pentru a vedea alte județe
+                </p>
+              </div>
             </div>
-          </div>
+          </ScrollArea>
         </Card>
       )}
 
