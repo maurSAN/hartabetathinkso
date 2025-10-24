@@ -18,7 +18,7 @@ const RomaniaMap = () => {
   useEffect(() => {
     if (!mapContainer.current || !isTokenSet) return;
 
-    mapboxgl.accessToken = mapboxToken;
+    mapboxgl.accessToken = "pk.eyJ1Ijoicmlua2Fkb3NoaSIsImEiOiJjbWd3cnhmaTExMmt5MmlzZWQ0dGF1amZ4In0.9-fSTtTfSYKupbvhPw0HSw";
     
     // Romania bounds
     const romaniaBounds: mapboxgl.LngLatBoundsLike = [
