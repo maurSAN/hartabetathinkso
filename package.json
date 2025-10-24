@@ -14,5 +14,6 @@
     "vite": "^5.0.0",
     "@vitejs/plugin-react": "^4.0.0",
     "gh-pages": "^6.1.0"
+    npm install --save-dev gh-pages
   }
 }
