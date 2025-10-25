@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Input } from '@/components/ui/input';
@@ -201,7 +201,7 @@ const RomaniaMap = () => {
     };
   }, [isTokenSet, mapboxToken]);
 
-  const handleTokenSubmit = (e: React.FormEvent) => {
+  const handleTokenSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (mapboxToken.trim()) {
       setIsTokenSet(true);
