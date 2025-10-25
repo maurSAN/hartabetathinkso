@@ -7,7 +7,7 @@ import { countyDetails, type CountyData } from '@/data/county-data';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 // IMPORTANT: Înlocuiește cu token-ul tău Mapbox public de la https://account.mapbox.com/access-tokens/
-const MAPBOX_TOKEN = 'pk.YOUR_MAPBOX_TOKEN_HERE';
+const MAPBOX_TOKEN = 'pk.eyJ1Ijoicmlua2Fkb3NoaSIsImEiOiJjbWd3cnhmaTExMmt5MmlzZWQ0dGF1amZ4In0.9-fSTtTfSYKupbvhPw0HSw';
 
 const RomaniaMap = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
