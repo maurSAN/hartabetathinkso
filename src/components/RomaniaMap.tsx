@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,7 @@ const RomaniaMap = () => {
   useEffect(() => {
     if (!mapContainer.current || !isTokenSet) return;
 
-    mapboxgl.accessToken = "pk.eyJ1Ijoicmlua2Fkb3NoaSIsImEiOiJjbWd3cnhmaTExMmt5MmlzZWQ0dGF1amZ4In0.9-fSTtTfSYKupbvhPw0HSw";
+    mapboxgl.accessToken = mapboxToken;
     
     // Romania bounds
     const romaniaBounds: mapboxgl.LngLatBoundsLike = [
@@ -201,7 +201,7 @@ const RomaniaMap = () => {
     };
   }, [isTokenSet, mapboxToken]);
 
-  const handleTokenSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleTokenSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (mapboxToken.trim()) {
       setIsTokenSet(true);
