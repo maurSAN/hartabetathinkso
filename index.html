@@ -4,8 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Harta test - mauR</title>
+
+    <!-- Include CSS Mapbox -->
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.16.1/mapbox-gl.css" rel="stylesheet" />
+
+    <!-- Include JS Mapbox -->
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.16.1/mapbox-gl.js"></script>
+
     <style>
       body, html {
         margin: 0;
@@ -18,23 +23,19 @@
       }
     </style>
   </head>
+
   <body>
     <div id="map"></div>
 
+    <!-- Codul tău vine DUPĂ ce s-a încărcat Mapbox -->
     <script>
       mapboxgl.accessToken = 'pk.eyJ1Ijoicmlua2Fkb3NoaSIsImEiOiJjbWd3cnhmaTExMmt5MmlzZWQ0dGF1amZ4In0.9-fSTtTfSYKupbvhPw0HSw';
       const map = new mapboxgl.Map({
         container: 'map',
-        style: 'mapbox://styles/mapbox/streets-v12', // ✅ stil valid
-        center: [26.4, 46.93], // ✅ coordonate reale (ex: Piatra Neamț)
-        zoom: 11 // ✅ zoom rezonabil
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [26.4, 46.93],
+        zoom: 11
       });
-
-      // marker opțional
-      new mapboxgl.Marker()
-        .setLngLat([26.4, 46.93])
-        .setPopup(new mapboxgl.Popup().setText("Salut, mauR!"))
-        .addTo(map);
     </script>
   </body>
 </html>
