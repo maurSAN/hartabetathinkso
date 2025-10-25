@@ -3,31 +3,39 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>harta test</title>
+    <title>Harta test</title>
     <meta name="description" content="harta test" />
     <meta name="author" content="mauR-" />
 
-    
-    <meta property="og:description" content="Lovable Generated Project" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <!-- 🔗 Include Mapbox GL JS -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.16.1/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.16.1/mapbox-gl.js"></script>
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-    <meta property="og:title" content="harta test">
-  <meta name="twitter:title" content="harta testxx">
-</head>
-mapboxgl.accessToken = 'pk.eyJ1Ijoicmlua2Fkb3NoaSIsImEiOiJjbWd3cnhmaTExMmt5MmlzZWQ0dGF1amZ4In0.9-fSTtTfSYKupbvhPw0HSw';
-var map = new mapboxgl.Map({
-  container: 'map',
-  style: 'mapbox://styles/…',
-  center: [lng, lat],
-  zoom: …
-});
+    <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+      #map {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
 
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <!-- 📍 Container pentru hartă -->
+    <div id="map"></div>
+
+    <script>
+      mapboxgl.accessToken = 'pk.eyJ1Ijoicmlua2Fkb3NoaSIsImEiOiJjbWd3cnhmaTExMmt5MmlzZWQ0dGF1amZ4In0.9-fSTtTfSYKupbvhPw0HSw';
+      const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v12', // sau alt stil valid
+        center: [26.4, 46.93], // exemplu coordonate Piatra Neamț :)
+        zoom: 11
+      });
+    </script>
   </body>
 </html>
