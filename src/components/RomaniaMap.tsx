@@ -48,9 +48,8 @@ const RomaniaMap = () => {
 
     map.current.on('load', async () => {
       try {
-        // Load local GeoJSON - adaptăm path-ul pentru GitHub Pages
-        const basePath = window.location.hostname.includes('github.io') ? '/hartabetathinkso' : '';
-        const response = await fetch(`${basePath}/romania-counties.geojson`);
+        // Load local GeoJSON
+        const response = await fetch('/romania-counties.geojson');
         const countiesData = await response.json();
 
         // Add source
