@@ -16,7 +16,7 @@ const RomaniaMap = () => {
   const [selectedCounty, setSelectedCounty] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || map.current) return;
 
     mapboxgl.accessToken = MAPBOX_TOKEN;
     
