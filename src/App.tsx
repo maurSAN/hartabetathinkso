@@ -1,33 +1,30 @@
-import { useEffect, useRef } from "react";
-import mapboxgl from "mapbox-gl";
-import "./App.css";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
 
-mapboxgl.accessToken =
-  "pk.eyJ1Ijoicmlua2Fkb3NoaSIsImEiOiJjbWd3cnhmaTExMmt5MmlzZWQ0dGF1amZ4In0.9-fSTtTfSYKupbvhPw0HSw";
+const queryClient = new QueryClient();
 
-function App() {
-  const mapContainer = useRef<HTMLDivElement | null>(null);
-  const mapInstance = useRef<mapboxgl.Map | null>(null);
-
-  useEffect(() => {
-    if (mapInstance.current || !mapContainer.current) return;
-
-    mapInstance.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: "mapbox://styles/mapbox/streets-v12",
-      center: [26.4, 46.93], // Piatra Neamț 😎
-      zoom: 11,
-    });
-
-    new mapboxgl.Marker()
-      .setLngLat([26.4, 46.93])
-      .setPopup(new mapboxgl.Popup().setText("Salut, mauR!"))
-      .addTo(mapInstance.current);
-
-    return () => mapInstance.current?.remove();
-  }, []);
-
-  return <div ref={mapContainer} className="map-container" />;
-}
+const App = () => {
+  const basename = window.location.hostname.includes('github.io') ? '/hartabetathinkso' : '/';
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter basename={basename}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
