@@ -3,7 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { countyDetails, type CountyData } from '@/data/county-data';
+import { countyDetails, type City } from '@/data/county-data';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 // IMPORTANT: Înlocuiește cu token-ul tău Mapbox public de la https://account.mapbox.com/access-tokens/
@@ -14,6 +14,8 @@ const RomaniaMap = () => {
   const map = useRef<mapboxgl.Map | null>(null);
   const [hoveredCounty, setHoveredCounty] = useState<string | null>(null);
   const [selectedCounty, setSelectedCounty] = useState<string | null>(null);
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  const cityMarkersRef = useRef<mapboxgl.Marker[]>([]);
 
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
@@ -179,8 +181,14 @@ const RomaniaMap = () => {
             const feature = e.features[0];
             const countyName = feature.properties?.shapeName || 'Necunoscut';
             
-            console.log('County clicked:', countyName); // Debug log
+            console.log('County clicked:', countyName);
+            
+            // Elimină markerii anteriori
+            cityMarkersRef.current.forEach(marker => marker.remove());
+            cityMarkersRef.current = [];
+            
             setSelectedCounty(countyName);
+            setSelectedCity(null);
             
             map.current?.setPaintProperty('counties-selected', 'fill-opacity', [
               'case',
@@ -188,6 +196,61 @@ const RomaniaMap = () => {
               0.5,
               0
             ]);
+            
+            // Face zoom pe județ și afișează orașele
+            const county = countyDetails[countyName];
+            if (county && map.current) {
+              map.current.flyTo({
+                center: county.center,
+                zoom: 8.5,
+                duration: 1500
+              });
+              
+              // Adaugă markere pentru orașe după ce s-a terminat zoom-ul
+              setTimeout(() => {
+                county.cities.forEach(city => {
+                  const el = document.createElement('div');
+                  el.className = 'city-marker';
+                  el.style.cssText = `
+                    background: #1976D2;
+                    width: 12px;
+                    height: 12px;
+                    border-radius: 50%;
+                    border: 2px solid white;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                    cursor: pointer;
+                    transition: all 0.2s;
+                  `;
+                  
+                  el.addEventListener('mouseenter', () => {
+                    el.style.width = '16px';
+                    el.style.height = '16px';
+                    el.style.background = '#2196F3';
+                  });
+                  
+                  el.addEventListener('mouseleave', () => {
+                    el.style.width = '12px';
+                    el.style.height = '12px';
+                    el.style.background = '#1976D2';
+                  });
+                  
+                  const marker = new mapboxgl.Marker(el)
+                    .setLngLat(city.coordinates)
+                    .setPopup(
+                      new mapboxgl.Popup({ offset: 15 })
+                        .setHTML(`<div style="padding: 4px 8px; font-weight: 600;">${city.name}</div>`)
+                    )
+                    .addTo(map.current!);
+                  
+                  el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    setSelectedCity(city);
+                  });
+                  
+                  cityMarkersRef.current.push(marker);
+                });
+              }, 1500);
+            }
           }
         });
 
@@ -197,9 +260,34 @@ const RomaniaMap = () => {
     });
 
     return () => {
+      cityMarkersRef.current.forEach(marker => marker.remove());
       map.current?.remove();
     };
   }, []);
+  
+  const handleBackToCounty = () => {
+    setSelectedCity(null);
+  };
+  
+  const handleBackToMap = () => {
+    setSelectedCounty(null);
+    setSelectedCity(null);
+    
+    // Elimină markerii orașelor
+    cityMarkersRef.current.forEach(marker => marker.remove());
+    cityMarkersRef.current = [];
+    
+    // Resetează zoom-ul
+    if (map.current) {
+      map.current.flyTo({
+        center: [25.0, 46.0],
+        zoom: 5.5,
+        duration: 1500
+      });
+      
+      map.current.setPaintProperty('counties-selected', 'fill-opacity', 0);
+    }
+  };
 
   return (
     <div className="relative w-full h-screen bg-background">
@@ -214,38 +302,43 @@ const RomaniaMap = () => {
         </Card>
       )}
 
-      {/* Selected county panel - POPOUT */}
-      {selectedCounty && (
+      {/* Panel pentru oraș selectat */}
+      {selectedCity && (
         <Card className="absolute top-4 left-4 right-4 md:right-auto md:w-[450px] md:max-h-[85vh] bg-card shadow-2xl border-2">
           <div className="flex items-start justify-between p-6 pb-4 border-b">
             <div>
-              <h2 className="text-2xl font-bold text-primary">Județul {selectedCounty}</h2>
-              {countyDetails[selectedCounty] && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {countyDetails[selectedCounty].description}
-                </p>
-              )}
+              <h2 className="text-2xl font-bold text-primary">{selectedCity.name}</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Județul {selectedCounty}
+              </p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setSelectedCounty(null);
-                map.current?.setPaintProperty('counties-selected', 'fill-opacity', 0);
-              }}
-              className="h-8 w-8 p-0 hover:bg-muted shrink-0"
-            >
-              ✕
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBackToCounty}
+                className="h-8 px-2 hover:bg-muted"
+              >
+                ← Înapoi
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBackToMap}
+                className="h-8 w-8 p-0 hover:bg-muted shrink-0"
+              >
+                ✕
+              </Button>
+            </div>
           </div>
           
           <ScrollArea className="h-[calc(85vh-120px)] md:h-auto">
             <div className="p-6 space-y-4">
-              {countyDetails[selectedCounty]?.properties && countyDetails[selectedCounty].properties.length > 0 ? (
+              {selectedCity.properties.length > 0 ? (
                 <>
-                  <h3 className="font-semibold text-lg">Terenuri și Proprietăți</h3>
+                  <h3 className="font-semibold text-lg">Proprietăți disponibile</h3>
                   <div className="space-y-4">
-                    {countyDetails[selectedCounty].properties.map((property, index) => (
+                    {selectedCity.properties.map((property, index) => (
                       <Card key={index} className="p-4 bg-muted/50 border">
                         <h4 className="font-bold text-base mb-2">{property.name}</h4>
                         <div className="space-y-1 text-sm">
@@ -261,19 +354,72 @@ const RomaniaMap = () => {
               ) : (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">
-                    Nu există încă proprietăți adăugate pentru acest județ.
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Adaugă detalii în <code className="bg-muted px-1 py-0.5 rounded">src/data/county-data.ts</code>
+                    Nu există proprietăți pentru acest oraș.
                   </p>
                 </div>
               )}
-              
-              <div className="pt-4 border-t">
-                <p className="text-xs text-muted-foreground italic">
-                  Click pe hartă pentru a vedea alte județe
+            </div>
+          </ScrollArea>
+        </Card>
+      )}
+      
+      {/* Panel pentru județ selectat (când nu e selectat niciun oraș) */}
+      {selectedCounty && !selectedCity && (
+        <Card className="absolute top-4 left-4 right-4 md:right-auto md:w-[450px] md:max-h-[85vh] bg-card shadow-2xl border-2">
+          <div className="flex items-start justify-between p-6 pb-4 border-b">
+            <div>
+              <h2 className="text-2xl font-bold text-primary">Județul {selectedCounty}</h2>
+              {countyDetails[selectedCounty] && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {countyDetails[selectedCounty].description}
                 </p>
-              </div>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBackToMap}
+              className="h-8 w-8 p-0 hover:bg-muted shrink-0"
+            >
+              ✕
+            </Button>
+          </div>
+          
+          <ScrollArea className="h-[calc(85vh-120px)] md:h-auto">
+            <div className="p-6 space-y-4">
+              {countyDetails[selectedCounty]?.cities && countyDetails[selectedCounty].cities.length > 0 ? (
+                <>
+                  <h3 className="font-semibold text-lg">Orașe disponibile</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Click pe un marker albastru de pe hartă pentru a vedea proprietățile din acel oraș.
+                  </p>
+                  <div className="space-y-2">
+                    {countyDetails[selectedCounty].cities.map((city, index) => (
+                      <Card 
+                        key={index} 
+                        className="p-3 bg-muted/50 border cursor-pointer hover:bg-muted transition-colors"
+                        onClick={() => setSelectedCity(city)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-bold text-base">{city.name}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {city.properties.length} {city.properties.length === 1 ? 'proprietate' : 'proprietăți'}
+                            </p>
+                          </div>
+                          <span className="text-primary">→</span>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">
+                    Nu există încă orașe adăugate pentru acest județ.
+                  </p>
+                </div>
+              )}
             </div>
           </ScrollArea>
         </Card>
@@ -284,7 +430,11 @@ const RomaniaMap = () => {
         <Card className="p-4 bg-card/95 backdrop-blur-sm shadow-lg">
           <h3 className="font-bold mb-2">Harta României</h3>
           <p className="text-xs text-muted-foreground">
-            Treci cu mouse-ul pentru hover. Click pe județ pentru detalii.
+            {!selectedCounty 
+              ? "Treci cu mouse-ul pentru hover. Click pe județ pentru orașe."
+              : !selectedCity
+              ? "Click pe markerele albastre pentru a vedea proprietățile."
+              : "Vizualizezi proprietățile disponibile."}
           </p>
         </Card>
       </div>
