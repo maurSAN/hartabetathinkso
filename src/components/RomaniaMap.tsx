@@ -198,7 +198,9 @@ const RomaniaMap = () => {
             ]);
             
             // Face zoom pe județ și afișează orașele
-            const county = countyDetails[countyName];
+            // Normalizează numele pentru lookup (convertește la majuscule)
+            const countyKey = countyName.toUpperCase();
+            const county = countyDetails[countyKey];
             if (county && map.current) {
               map.current.flyTo({
                 center: county.center,
@@ -369,9 +371,9 @@ const RomaniaMap = () => {
           <div className="flex items-start justify-between p-6 pb-4 border-b">
             <div>
               <h2 className="text-2xl font-bold text-primary">Județul {selectedCounty}</h2>
-              {countyDetails[selectedCounty] && (
+              {countyDetails[selectedCounty.toUpperCase()] && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  {countyDetails[selectedCounty].description}
+                  {countyDetails[selectedCounty.toUpperCase()].description}
                 </p>
               )}
             </div>
@@ -387,14 +389,14 @@ const RomaniaMap = () => {
           
           <ScrollArea className="h-[calc(85vh-120px)] md:h-auto">
             <div className="p-6 space-y-4">
-              {countyDetails[selectedCounty]?.cities && countyDetails[selectedCounty].cities.length > 0 ? (
+              {countyDetails[selectedCounty.toUpperCase()]?.cities && countyDetails[selectedCounty.toUpperCase()].cities.length > 0 ? (
                 <>
                   <h3 className="font-semibold text-lg">Orașe disponibile</h3>
                   <p className="text-sm text-muted-foreground">
                     Click pe un marker albastru de pe hartă pentru a vedea proprietățile din acel oraș.
                   </p>
                   <div className="space-y-2">
-                    {countyDetails[selectedCounty].cities.map((city, index) => (
+                    {countyDetails[selectedCounty.toUpperCase()].cities.map((city, index) => (
                       <Card 
                         key={index} 
                         className="p-3 bg-muted/50 border cursor-pointer hover:bg-muted transition-colors"
